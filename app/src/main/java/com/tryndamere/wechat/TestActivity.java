@@ -3,14 +3,21 @@ package com.tryndamere.wechat;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.hyphenate.EMCallBack;
 import com.hyphenate.EMMessageListener;
 import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMMessage;
+import com.hyphenate.util.Utils;
+import com.tryndamere.wechat.bean.ChatBean;
+import com.tryndamere.wechat.bean.LoginBean;
 import com.tryndamere.wechat.bean.UserBean;
 import com.tryndamere.wechat.http.HttpUrlUtils;
 import com.tryndamere.wechat.http.OkHttpUtils;
@@ -49,6 +56,17 @@ public class TestActivity extends Activity {
     private EditText editPassword;
 
     private TextView textResult;
+    Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            if (msg.what == 1){
+                String s = msg.obj.toString();
+                String substring = s.substring(5, s.length() - 1);
+                textResult.setText(substring);
+            }
+        }
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,31 +77,43 @@ public class TestActivity extends Activity {
     }
 
     private void initLisintener() {
+
         EMMessageListener msgListener = new EMMessageListener() {
 
             @Override
-            public void onMessageReceived(List<EMMessage> messages) {
-                editChat.setText(messages.get(0).toString());
+            public void onMessageReceived(final List<EMMessage> messages) {
                 //收到消息
-                Log.d("EMMessage", "收到消息:" + messages.get(0).toString());
+
+                Log.d("EMMessage", "收到消息:" + messages.get(0).getBody().toString());
+                new Thread(){
+                    @Override
+                    public void run() {
+                        super.run();
+                        Message message = new Message();
+                        message.what = 1;
+                        message.obj = messages.get(0).getBody().toString();
+                        handler.sendMessage(message);
+                    }
+                }.start();
+               // textResult.setText(messages.get(0).getBody().toString());
             }
 
             @Override
             public void onCmdMessageReceived(List<EMMessage> messages) {
                 //收到透传消息
-                Log.d("EMMessage", "收到透传消息:" + messages.get(0).toString());
+                Log.d("EMMessage", "收到透传消息:" + messages.toString());
             }
 
             @Override
             public void onMessageRead(List<EMMessage> messages) {
                 //收到已读回执
-                Log.d("EMMessage", "收到已读回执:" + messages.get(0).toString());
+                Log.d("EMMessage", "收到已读回执:" + messages.toString());
             }
 
             @Override
             public void onMessageDelivered(List<EMMessage> message) {
                 //收到已送达回执
-                Log.d("EMMessage", "收到已送达回执:" + message.get(0).toString());
+                Log.d("EMMessage", "收到已送达回执:" + message.toString());
             }
 
             @Override
@@ -93,6 +123,7 @@ public class TestActivity extends Activity {
             }
         };
         EMClient.getInstance().chatManager().addMessageListener(msgListener);
+
     }
 
     private void initView(TestActivity testActivity) {
@@ -106,12 +137,12 @@ public class TestActivity extends Activity {
 
 
         //注册的参数
-        regparam.put("user.nickname", "Tryndamere");
+        regparam.put("user.nickname", "LZM");
         regparam.put("user.password", "123");
-        regparam.put("user.gender", Utils.toUTF("男"));
-        regparam.put("user.area", Utils.toUTF("北京"));
-        regparam.put("user.phone", "lzm");
-        regparam.put("user.introduce", Utils.toUTF("我就是我不一样的烟火"));
+        regparam.put("user.gender", "男");
+        regparam.put("user.area", "北京");
+        regparam.put("user.phone", "15313095207");
+        regparam.put("user.introduce", "我就是我不一样的烟火");
 
     }
 
@@ -125,6 +156,7 @@ public class TestActivity extends Activity {
                 myuserBean = userBean;
                 Log.d("MainActivity", "getAsynRegist_userBean:" + userBean.toString());
                 textResult.setText(userBean.toString());
+                Toast.makeText(TestActivity.this, "成功", Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -139,16 +171,16 @@ public class TestActivity extends Activity {
     //登录
     public void getAsynLogin(View v) {
 
+        //loginEasemob(editUsername.getText().toString().trim(),editPassword.getText().toString().trim());
+
         //登录的参数
         loginparam.put("user.phone", editUsername.getText().toString().trim());
         loginparam.put("user.password", editPassword.getText().toString().trim());
 
-        OkHttpUtils.getInstance().getAsyn(HttpUrlUtils.LOGIN_URL, regparam, null, new OkHttpUtils.HttpCallBack<String>() {
+        OkHttpUtils.getInstance().getAsyn(HttpUrlUtils.LOGIN_URL, regparam, LoginBean.class, new OkHttpUtils.HttpCallBack<LoginBean>() {
             @Override
-            public void onSuccess(String result) {
-                Log.d("MainActivity", "getAsynLogin_result:" + result.toString());
-                textResult.setText(result.toString());
-
+            public void onSuccess(LoginBean result) {
+                loginEasemob(result);
             }
 
             @Override
@@ -170,6 +202,7 @@ public class TestActivity extends Activity {
             public void onSuccess(String s) {
                 Log.d("MainActivity", s);
                 textResult.setText(s.toString());
+
             }
 
             @Override
@@ -179,18 +212,56 @@ public class TestActivity extends Activity {
         });
     }
 
+    private void loginEasemob(LoginBean result) {
+
+        EMClient.getInstance().login(result.getData().getPhone(), result.getData().getPassword(), new EMCallBack() {//回调
+            @Override
+            public void onSuccess() {
+                EMClient.getInstance().groupManager().loadAllGroups();
+                EMClient.getInstance().chatManager().loadAllConversations();
+                Log.d("main", "登录聊天服务器成功！");
+                //textResult.setText("登录聊天服务器成功!");
+            }
+
+            @Override
+            public void onProgress(int progress, String status) {
+
+            }
+
+            @Override
+            public void onError(int code, String message) {
+                Log.d("main", "登录聊天服务器失败！");
+            }
+        });
+    }
+
     //聊天儿发送
     public void upLoadChat(View v) {
+        fromFuWuQi();
+        //fromHuanXin();
+    }
+
+    private void fromHuanXin() {
+        //创建一条文本消息，content为消息文字内容，toChatUsername为对方用户或者群聊的id，后文皆是如此
+        EMMessage message = EMMessage.createTxtSendMessage(editChat.getText().toString().trim(), "456");
+        //如果是群聊，设置chattype，默认是单聊
+        message.setChatType(EMMessage.ChatType.Chat);
+        //发送消息
+        EMClient.getInstance().chatManager().sendMessage(message);
+    }
+
+    private void fromFuWuQi() {
 
         //聊天的参数
-        chatnparam.put("chat.userId", 0);
-        chatnparam.put("chat.userId", 1); //发送好友的ID
-        chatnparam.put("chat.userId", Utils.toUTF(editChat.getText().toString().trim()));
+        chatnparam.put("chat.userId", 4);
+        chatnparam.put("chat.userId", 2); //发送好友的ID
+        chatnparam.put("chat.userId", editChat.getText().toString().trim());
 
 
-        OkHttpUtils.getInstance().getAsyn(HttpUrlUtils.SEND_MESSAGE_URL, chatnparam, null, new OkHttpUtils.HttpCallBack<String>() {
+        OkHttpUtils.getInstance().getAsyn(HttpUrlUtils.SEND_MESSAGE_URL, chatnparam, ChatBean.class, new OkHttpUtils.HttpCallBack<ChatBean>() {
             @Override
-            public void onSuccess(String result) {
+            public void onSuccess(ChatBean result) {
+
                 Log.d("MainActivity", "upLoadChat_result:" + result.toString());
                 textResult.setText(result.toString());
             }
@@ -207,7 +278,7 @@ public class TestActivity extends Activity {
     public void addFriend(View v) {
 
         //添加好友的参数
-        addFriendparam.put("relationship.friendId", "");//添加好友的ID
+        addFriendparam.put("relationship.friendId", 2);//添加好友的ID
         addFriendparam.put("relationship.groupName", "a");
 
         OkHttpUtils.getInstance().getAsyn(HttpUrlUtils.ADD_FRIEND_URL, regparam, null, new OkHttpUtils.HttpCallBack<String>() {

@@ -7,7 +7,7 @@ package com.tryndamere.wechat.http;
 public class HttpUrlUtils {
 
     //主机地址
-    public static String HOST_URL = "http://localhost:8080/MyoneInterface/";
+    public static String HOST_URL = "http://169.254.118.53:8080/MyoneInterface/";
 
     // user.nickname=12121231
     // &user.password=456&user.gender=%E7%94%B7
