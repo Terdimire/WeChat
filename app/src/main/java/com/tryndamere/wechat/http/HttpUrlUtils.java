@@ -7,7 +7,7 @@ package com.tryndamere.wechat.http;
 public class HttpUrlUtils {
 
     //主机地址
-    public static String HOST_URL = "http://169.254.118.53:8080/MyoneInterface/";
+    public static String HOST_URL = "http://169.254.69.102:8080/MyInterface/";
 
     // user.nickname=12121231
     // &user.password=456&user.gender=%E7%94%B7
@@ -28,7 +28,10 @@ public class HttpUrlUtils {
 
     //relationship.friendId=3
     //&relationship.groupName=a
-
+    //http://localhost:8080/MyInterface/
+    //userAction_addFriends.action?
+    //relationship.friendId=3
+    // &relationship.groupName=a
     //3 添加好友地址(get)
     public static String ADD_FRIEND_URL = HOST_URL + "userAction_addFriends.action?";
 

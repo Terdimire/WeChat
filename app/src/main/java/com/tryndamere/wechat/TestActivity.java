@@ -17,6 +17,7 @@ import com.hyphenate.chat.EMClient;
 import com.hyphenate.chat.EMMessage;
 import com.hyphenate.util.Utils;
 import com.tryndamere.wechat.bean.ChatBean;
+import com.tryndamere.wechat.bean.FriendBean;
 import com.tryndamere.wechat.bean.LoginBean;
 import com.tryndamere.wechat.bean.UserBean;
 import com.tryndamere.wechat.http.HttpUrlUtils;
@@ -56,17 +57,18 @@ public class TestActivity extends Activity {
     private EditText editPassword;
 
     private TextView textResult;
-    Handler handler = new Handler(){
+    Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            if (msg.what == 1){
+            if (msg.what == 1) {
                 String s = msg.obj.toString();
                 String substring = s.substring(5, s.length() - 1);
                 textResult.setText(substring);
             }
         }
     };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,7 +87,7 @@ public class TestActivity extends Activity {
                 //收到消息
 
                 Log.d("EMMessage", "收到消息:" + messages.get(0).getBody().toString());
-                new Thread(){
+                new Thread() {
                     @Override
                     public void run() {
                         super.run();
@@ -95,7 +97,7 @@ public class TestActivity extends Activity {
                         handler.sendMessage(message);
                     }
                 }.start();
-               // textResult.setText(messages.get(0).getBody().toString());
+                // textResult.setText(messages.get(0).getBody().toString());
             }
 
             @Override
@@ -180,6 +182,8 @@ public class TestActivity extends Activity {
         OkHttpUtils.getInstance().getAsyn(HttpUrlUtils.LOGIN_URL, regparam, LoginBean.class, new OkHttpUtils.HttpCallBack<LoginBean>() {
             @Override
             public void onSuccess(LoginBean result) {
+                Log.d("loginresult",result.toString());
+
                 loginEasemob(result);
             }
 
@@ -253,9 +257,9 @@ public class TestActivity extends Activity {
     private void fromFuWuQi() {
 
         //聊天的参数
-        chatnparam.put("chat.userId", 4);
-        chatnparam.put("chat.userId", 2); //发送好友的ID
-        chatnparam.put("chat.userId", editChat.getText().toString().trim());
+        chatnparam.put("chat.userId", 3);
+        chatnparam.put("chat.touserId", 4); //发送好友的ID
+        chatnparam.put("chat.message", editChat.getText().toString().trim());
 
 
         OkHttpUtils.getInstance().getAsyn(HttpUrlUtils.SEND_MESSAGE_URL, chatnparam, ChatBean.class, new OkHttpUtils.HttpCallBack<ChatBean>() {
@@ -277,13 +281,15 @@ public class TestActivity extends Activity {
     //添加好友
     public void addFriend(View v) {
 
-        //添加好友的参数
-        addFriendparam.put("relationship.friendId", 2);//添加好友的ID
-        addFriendparam.put("relationship.groupName", "a");
 
-        OkHttpUtils.getInstance().getAsyn(HttpUrlUtils.ADD_FRIEND_URL, regparam, null, new OkHttpUtils.HttpCallBack<String>() {
+        //添加好友的参数
+
+        //addFriendparam.put("relationship.friendId", "3");//添加好友的ID
+        //addFriendparam.put("relationship.groupName", "a");
+
+        OkHttpUtils.getInstance().getAsyn(HttpUrlUtils.ADD_FRIEND_URL+"relationship.friendId=3&relationship.groupName=a", null, FriendBean.class, new OkHttpUtils.HttpCallBack<FriendBean>() {
             @Override
-            public void onSuccess(String result) {
+            public void onSuccess(FriendBean result) {
                 Log.d("MainActivity", "addFriend_result:" + result.toString());
                 textResult.setText(result.toString());
 
